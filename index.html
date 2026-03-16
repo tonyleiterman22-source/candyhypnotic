@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypnosis AI | Personal Meditation & Sleep Guide</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Stripe (for payments) -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Firebase -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+</head>
+
+<body class="theme-dark">
+    <!-- Particles Background -->
+    <div id="particles-container"></div>
+    <div class="glow-orb top-left"></div>
+    <div class="glow-orb bottom-right"></div>
+
+    <nav class="navbar glass">
+        <div class="logo">
+            <i class="ri-moon-clear-line"></i>
+            <span>Hypnosis AI</span>
+        </div>
+        <div class="nav-links">
+            <button class="nav-btn" onclick="app.switchView('landing')">Home</button>
+            <button class="nav-btn" onclick="app.switchView('builder')">Create Guide</button>
+            <button class="nav-btn primary-btn" onclick="app.switchView('chat')">Start Free Chat</button>
+        </div>
+    </nav>
+
+    <!-- VIEWS CONTAINER -->
+    <main id="app-container">
+
+        <!-- 1. LANDING VIEW -->
+        <section id="view-landing" class="view active">
+            <header class="hero">
+                <h1 class="fade-up-1">Meet Your Personal AI <br><span>Meditation & Sleep Guide</span></h1>
+                <p class="fade-up-2">Experience customized hypnosis, personalized sleep stories, and live video
+                    meditations designed for your deep rest and inner peace.</p>
+                <div class="hero-cta fade-up-3">
+                    <button class="btn-large pulse-glow" onclick="app.switchView('chat')">Experience Now</button>
+                    <button class="btn-large btn-outline" onclick="app.switchView('builder')">Design Your Guide</button>
+                </div>
+            </header>
+
+            <div class="features-grid">
+                <div class="feature-card glass hover-lift">
+                    <i class="ri-chat-3-line"></i>
+                    <h3>Unlimited Chat</h3>
+                    <p>Converse naturally with your guide anytime.</p>
+                </div>
+                <div class="feature-card glass hover-lift">
+                    <i class="ri-mic-line"></i>
+                    <h3>Voice Messages</h3>
+                    <p>Soothing voices customized to your preference.</p>
+                </div>
+                <div class="feature-card glass hover-lift">
+                    <i class="ri-image-line"></i>
+                    <h3>Custom Avatars</h3>
+                    <p>Visualize your guide in stunning detail.</p>
+                </div>
+                <div class="feature-card glass hover-lift">
+                    <i class="ri-video-line"></i>
+                    <h3>Live Video</h3>
+                    <p>Real-time immersive digital presence.</p>
+                </div>
+                <div class="feature-card glass hover-lift">
+                    <i class="ri-focus-3-line"></i>
+                    <h3>Guided Meditations</h3>
+                    <p>Dynamically generated for your current state.</p>
+                </div>
+                <div class="feature-card glass hover-lift">
+                    <i class="ri-moon-line"></i>
+                    <h3>Sleep Stories</h3>
+                    <p>Drift off with bespoke, relaxing narratives.</p>
+                </div>
+            </div>
+
+            <div class="pricing-section glass">
+                <h2>Hypnosis AI Premium</h2>
+                <div class="price"><span>$12.99</span>/month</div>
+                <ul class="features-list">
+                    <li><i class="ri-check-line"></i> All Premium AI Voices</li>
+                    <li><i class="ri-check-line"></i> Unlimited Voice Chat</li>
+                    <li><i class="ri-check-line"></i> Save Multiple Custom Characters</li>
+                    <li><i class="ri-check-line"></i> Daily Personalized Scripts</li>
+                </ul>
+                <button class="btn-large primary-btn" onclick="app.triggerSubscription()">Subscribe Now</button>
+            </div>
+        </section>
+
+        <!-- 2. CHARACTER BUILDER VIEW -->
+        <section id="view-builder" class="view">
+            <div class="builder-layout">
+                <!-- Left: Form -->
+                <div class="builder-panel glass">
+                    <h2>Design Your Guide</h2>
+                    <p class="subtext">Shape the AI's personality, appearance, and vocal tone.</p>
+
+                    <form id="builder-form" onsubmit="event.preventDefault(); app.createCharacter();">
+                        <div class="input-group">
+                            <label>Guide Name</label>
+                            <input type="text" id="char-name" placeholder="e.g., Luna" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Avatar Style</label>
+                            <div class="avatar-selector">
+                                <button type="button" class="avatar-btn active" data-style="ethereal">✨
+                                    Ethereal</button>
+                                <button type="button" class="avatar-btn" data-style="zen">🧘‍♀️ Zen</button>
+                                <button type="button" class="avatar-btn" data-style="monk">📿 Monk</button>
+                                <button type="button" class="avatar-btn" data-style="nature">🌿 Nature</button>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Personality Traits</label>
+                            <select id="char-personality">
+                                <option value="soothing_mother">Soothing & Nurturing</option>
+                                <option value="wise_sage">Wise & Philosophical</option>
+                                <option value="clinical_therapist">Clinical & Structured</option>
+                                <option value="mystical_shaman">Mystical & Spiritual</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Voice Characteristics</label>
+                            <div class="slider-group">
+                                <label>Pacing (Slow to Fast)</label>
+                                <input type="range" id="voice-pace" min="1" max="100" value="30">
+                            </div>
+                            <div class="slider-group">
+                                <label>Tone (Deep to High)</label>
+                                <input type="range" id="voice-tone" min="1" max="100" value="50">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-large primary-btn w-full">Generate Character Avatar</button>
+                    </form>
+                </div>
+
+                <!-- Right: Preview -->
+                <div class="preview-panel glass">
+                    <div class="preview-card" id="char-preview-card">
+                        <div class="avatar-frame shimmer" id="avatar-preview-img">
+                            <i class="ri-user-smile-line placeholder"></i>
+                        </div>
+                        <h3 id="preview-name">New Guide</h3>
+                        <p id="preview-traits">Trait details will appear here...</p>
+
+                        <div class="cost-estimate">
+                            <div class="cost-badge">
+                                <i class="ri-copper-coin-line"></i> Generation Cost: ~15 Tokens
+                            </div>
+                        </div>
+
+                        <button class="btn-outline hidden" id="save-guide-btn" onclick="app.switchView('chat')">Start
+                            Chatting with Guide</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. CHAT VIEW -->
+        <section id="view-chat" class="view">
+            <div class="chat-layout">
+                <!-- Sidebar -->
+                <aside class="chat-sidebar glass">
+                    <h3>Your Guides</h3>
+                    <ul class="guide-list" id="guide-list">
+                        <li class="guide-item active" onclick="app.selectGuide('Luna')">
+                            <div class="guide-avatar"><img
+                                    src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=150"
+                                    alt="Luna"></div>
+                            <div class="guide-info">
+                                <h4>Luna</h4>
+                                <span>Sleep Specialist</span>
+                            </div>
+                        </li>
+                        <li class="guide-item" onclick="app.selectGuide('Serena')">
+                            <div class="guide-avatar"><img
+                                    src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=150"
+                                    alt="Serena"></div>
+                            <div class="guide-info">
+                                <h4>Serena</h4>
+                                <span>Anxiety Relief</span>
+                            </div>
+                        </li>
+                    </ul>
+                    <button class="btn-outline w-full create-new-btn" onclick="app.switchView('builder')">
+                        <i class="ri-add-line"></i> New Guide
+                    </button>
+                </aside>
+
+                <!-- Chat Area -->
+                <main class="chat-main glass">
+                    <header class="chat-header">
+                        <div class="current-guide">
+                            <div class="guide-avatar">
+                                <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=150"
+                                    id="current-guide-img">
+                            </div>
+                            <h3 id="current-guide-name">Luna</h3>
+                        </div>
+                        <div class="chat-controls">
+                            <div class="token-display">
+                                <i class="ri-copper-coin-line"></i>
+                                <span id="token-count">5,000</span> Tokens
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message assistant">
+                            <div class="msg-bubble">
+                                Hello. Take a deep, slow breath in... and let it out. I'm here to help you relax. How
+                                are you feeling right now?
+                                <button class="play-audio-btn" aria-label="Play audio"><i
+                                        class="ri-play-circle-line"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <form id="chat-form" onsubmit="event.preventDefault(); app.sendMessage();">
+                            <input type="text" id="chat-input" placeholder="Type your message here..."
+                                autocomplete="off">
+                            <button type="button" class="btn-icon" aria-label="Voice input"><i
+                                    class="ri-mic-line"></i></button>
+                            <button type="submit" class="btn-icon primary-text" aria-label="Send"><i
+                                    class="ri-send-plane-2-fill"></i></button>
+                        </form>
+                    </div>
+                </main>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
