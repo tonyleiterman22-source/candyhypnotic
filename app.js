@@ -136,6 +136,7 @@ class App {
             previewImg.innerHTML = `<i class="ri-error-warning-line placeholder" style="color:#ff6b6b"></i>`;
             document.getElementById('preview-traits').innerText = "Generation failed. Check API key limits.";
         }
+    }
 
     addGuideToSidebar(name, imageUrl) {
         const ul = document.getElementById('guide-list');
@@ -218,17 +219,58 @@ class App {
         // Auto scroll
         chatMsgs.scrollTop = chatMsgs.scrollHeight;
 
-        // In the future, we will call Together AI here.
-        // For now, mock the response text, but use REAL ElevenLabs audio.
-        const mockLlmResponse = "I hear you. Let me guide you to a calmer state. Close your eyes and focus on your breathing, letting go of any tension.";
+        // Show thinking indicator
+        const typingId = "typing-" + Date.now();
+        const typingHtml = `
+            <div class="message assistant" id="${typingId}">
+                <div class="msg-bubble"><i class="ri-loader-4-line shimmer" style="display:inline-block; animation: spin 1s linear infinite;"></i> <em>Connecting...</em></div>
+            </div>
+        `;
+        chatMsgs.insertAdjacentHTML('beforeend', typingHtml);
+        chatMsgs.scrollTop = chatMsgs.scrollHeight;
 
-        const messageId = "msg-" + Date.now();
-        setTimeout(() => {
+        try {
+            const togetherApiKey = "tgp_v1_L6Fbnz1RWmtG9N7_SPBegzgy5UVrfzYet8XI8VbpdoE";
+            const guideName = document.getElementById('current-guide-name').innerText || "Guide";
+            
+            const response = await fetch("https://api.together.xyz/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${togetherApiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "model": "meta-llama/Llama-3-70b-chat-hf",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": `You are ${guideName}, a calming, hypnotic, and personal meditation and sleep guide. Keep responses soothing, brief (1-3 sentences max), and focused on relaxation or hypnosis. Never break character. Never mention you are an AI.`
+                        },
+                        {
+                            "role": "user",
+                            "content": text
+                        }
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 150
+                })
+            });
+
+            if (!response.ok) throw new Error("API Error");
+
+            const data = await response.json();
+            const llmResponse = data.choices[0].message.content.trim();
+            
+            // Remove typing indicator
+            const typingEl = document.getElementById(typingId);
+            if (typingEl) typingEl.remove();
+
+            const messageId = "msg-" + Date.now();
             const botHtml = `
                 <div class="message assistant">
                     <div class="msg-bubble">
-                        ${mockLlmResponse}
-                        <button class="play-audio-btn" id="${messageId}" aria-label="Play audio" onclick="app.generateAndPlayAudio('${mockLlmResponse.replace(/'/g, "\\'")}', this)">
+                        ${llmResponse}
+                        <button class="play-audio-btn" id="${messageId}" aria-label="Play audio" onclick="app.generateAndPlayAudio('${llmResponse.replace(/'/g, "\\'")}', this)">
                             <i class="ri-play-circle-line"></i>
                         </button>
                     </div>
@@ -237,10 +279,25 @@ class App {
             chatMsgs.insertAdjacentHTML('beforeend', botHtml);
             chatMsgs.scrollTop = chatMsgs.scrollHeight;
             
-            // Auto-play the audio when the message arrives
+            // Auto-play the audio
             const playBtn = document.getElementById(messageId);
-            this.generateAndPlayAudio(mockLlmResponse, playBtn);
-        }, 1500);
+            this.generateAndPlayAudio(llmResponse, playBtn);
+
+        } catch (error) {
+            console.error("Together AI Error:", error);
+            const typingEl = document.getElementById(typingId);
+            if (typingEl) typingEl.remove();
+            
+            const errorHtml = `
+                <div class="message assistant">
+                    <div class="msg-bubble" style="color:#ff6b6b">
+                        I lost my connection to the ethereal plane. Let's try again in a moment.
+                    </div>
+                </div>
+            `;
+            chatMsgs.insertAdjacentHTML('beforeend', errorHtml);
+            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        }
     }
 }
 
